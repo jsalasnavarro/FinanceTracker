@@ -1,6 +1,6 @@
 from expense import Expense
 # expense, cost, details, payment, date, password)
-pword = 'northernlights'
+pword = ''
 expenses = [['test', '100.00', 'rent', 'discover', '2021-11-01'], ['test1', '56.40', 'groceries', 'citi', '2021-11-02']]
 
 # newExpense = Expense('test1', 105.50, 'fun money', 'citi', '2021-10-11','northernlights')
