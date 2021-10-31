@@ -1,0 +1,11 @@
+# Ignore files related to API keys
+.env
+
+# Ignore Mac system files
+.DS_store
+
+# Ignore all json files
+*.json
+
+# Ignore all pickle files
+*.pickle
