@@ -1,4 +1,4 @@
-import mysql.connector
+import psycopg2
 from datetime import datetime
 
 class Expense:
@@ -19,19 +19,14 @@ class Expense:
 		print("in the works")
 
 	def setExpense(self):
-		# connect to finance db, expenses table
-		financeDB = mysql.connector.connect(
-			host = "localhost",
-			port = "3306",
-			user = "root",
-			database = "finance",
-			password = self.password)
+		# connect to finances db, monthly_expenses table
+		conn = psycopg2.connect(dbname = "finances", host = "localhost")
+		cursor = conn.cursor()
+		query  = "INSERT INTO monthly_expenses (vendor, cost, category, payment_type, dt) VALUES (%s, %s, %s, %s, %s)"
 
-		cursor = financeDB.cursor()
-		query  = "INSERT INTO expenses (expense, cost, details, payment, dt) VALUES (%s, %s, %s, %s, %s)"
 		singleExpense = [self.expense, self.cost, self.details, self.payment, self.date]
 		cursor.execute(query, singleExpense)
 
-		financeDB.commit()
+		conn.commit()
 		cursor.close()
-		financeDB.close()
+		conn.close()
