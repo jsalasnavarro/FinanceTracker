@@ -20,20 +20,13 @@ for row in range(sheets[0].rowCount):
 		value = sheets[0][col + 1, row + 1]
 		# check for blank cells in sheet
 		if value != "":
-			# look for date and cost column to format values for query
+			# look for date column to format values for query
 			if row  != 0:
 				# date column
 				if (col == 4):
 					# parse string to a datetime, format datetime type to string w/ 
 					# format for query
 					value = datetime.strftime(datetime.strptime(value, '%A, %B %d, %Y'), '%Y-%m-%d')
-				# cost column
-				elif (col == 1):
-					# remove spaces, dollar sign, and comma from cost value
-					value = value.replace(" ", "")
-					value = value.replace("$", "")
-					value = value.replace(",", "")
-					value = float(value)
 			
 			newRow.append(value)
 	# skip any blank rows from sheet and header

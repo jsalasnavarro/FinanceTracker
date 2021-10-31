@@ -1,32 +1,24 @@
-import psycopg2
 from datetime import datetime
+from runquery import RunQuery
 
 class Expense:
 	"""a class for organizing all expenses of financial records"""
 
-	def __init__(self, expense, cost, details, payment, date, password):
+	def __init__(self, vendor, cost, category, paymentType, date):
 		"""Initialize expense attributes"""
-		self.expense = expense
+		self.vendor = vendor
 		self.cost = cost
-		self.details = details
-		self.payment = payment
-		self.date = datetime.now().strftime('%Y-%m-%d')
-		self.password = password
-
+		self.category = category
+		self.paymentType = paymentType
+		if date == None:
+			self.date = datetime.now().strftime('%Y-%m-%d')
+		else:
+			self.date = date
 	def getExpenses():
-		"""Print all expenses for the current month"""
+		"""Show expenses for the current month"""
 
 		print("in the works")
 
 	def setExpense(self):
-		# connect to finances db, monthly_expenses table
-		conn = psycopg2.connect(dbname = "finances", host = "localhost")
-		cursor = conn.cursor()
-		query  = "INSERT INTO monthly_expenses (vendor, cost, category, payment_type, dt) VALUES (%s, %s, %s, %s, %s)"
-
-		singleExpense = [self.expense, self.cost, self.details, self.payment, self.date]
-		cursor.execute(query, singleExpense)
-
-		conn.commit()
-		cursor.close()
-		conn.close()
+		connect = RunQuery('finances', 'localhost')
+		connect.insertExpense(self.vendor, self.cost, self.category, self.paymentType, self.date)
