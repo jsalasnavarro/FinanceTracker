@@ -9,3 +9,6 @@
 
 # Ignore all pickle files
 *.pickle
+
+# Ignore all csv files
+*.csv

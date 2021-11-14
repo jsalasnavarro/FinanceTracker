@@ -1,13 +1,14 @@
 import psycopg2
 
 class RunQuery:
-	def __init__(self, name, host):
-		self.name = name
+	def __init__(self, table, database, host):
+		self.table = table
+		self.database = database
 		self.host = host
 
 	def createConnection(self):
 		# connect to db 'name'
-		connection = psycopg2.connect(dbname = self.name, host = self.host)
+		connection = psycopg2.connect(dbname = self.database, host = self.host)
 		cursor = connection.cursor()
 		return cursor, connection
 
@@ -16,11 +17,20 @@ class RunQuery:
 		cursor.close()
 		connection.close()
 
-	def insertExpense(self, vendor, cost, category, paymentType, date):
+	def insertExpense(self, source, cost, category, account, date):
 		cursor, connection = self.createConnection()
 
-		expense = [vendor, cost, category, paymentType, date]
-		query  = "INSERT INTO monthly_expenses (vendor, cost, category, payment_type, dt) VALUES (%s, %s, %s, %s, %s)"
+		expense = [source, cost, category, account, date]
+		query = "INSERT INTO " + self.table + " (vendor, cost, category, account, dt) VALUES (%s, %s, %s, %s, %s)"
 		cursor.execute(query, expense)
+
+		self.closeConnection(cursor, connection)
+
+	def insertIncome(self, source, income, account, date):
+		cursor, connection = self.createConnection()
+
+		income = [source, income, account, date]
+		query = "INSERT INTO " + self.table + " (source, income, account, dt) VALUES (%s, %s, %s, %s)"
+		cursor.execute(query, income)
 
 		self.closeConnection(cursor, connection)
