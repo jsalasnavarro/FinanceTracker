@@ -26,11 +26,11 @@ class RunQuery:
 
 		self.closeConnection(cursor, connection)
 
-	def insertIncome(self, source, income, account, date):
+	def insertIncome(self, source, income, category, account, date):
 		cursor, connection = self.createConnection()
 
-		income = [source, income, account, date]
-		query = "INSERT INTO " + self.table + " (source, income, account, dt) VALUES (%s, %s, %s, %s)"
+		income = [source, income, category, account, date]
+		query = "INSERT INTO " + self.table + " (source, income, category, account, dt) VALUES (%s, %s, %s, %s, %s)"
 		cursor.execute(query, income)
 
 		self.closeConnection(cursor, connection)

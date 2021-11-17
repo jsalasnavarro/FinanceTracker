@@ -7,6 +7,11 @@ import sys
 # newCsv = ImportFile('monthly_expenses.csv', 'monthly_expenses_test').csvFile()
 # print(newCsv)
 
+
 # add expenses indidividually
 # vendor, cost, category, paymentType, date
-# newExpense = Finance('dominion energy', '9.72','utilities', 'discover checkings', '2021-11-12').setExpense()
+# newExpense = Finance().setExpense()
+
+
+# add income individually
+# newIncome = Finance().setIncome()

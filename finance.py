@@ -25,4 +25,4 @@ class Finance:
 	def setIncome(self):
 		"""function to add income"""
 		connect = RunQuery(self.table, 'finances', 'localhost')
-		connect.insertIncome(self.source, self.money, self.account, self.date)	
+		connect.insertIncome(self.source, self.money, self.category, self.account, self.date)	

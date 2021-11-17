@@ -1,0 +1,26 @@
+// export to a csv
+/*COPY (SELECT vendor, cost, category, payment_type, dt FROM monthly_expenses)
+TO '/Users/jon/Downloads/monthly_expenses.csv'
+WITH CSV HEADER*/
+
+// selecting total monthly income and expenses
+/*SELECT sum(cost)
+FROM (SELECT * FROM monthly_expenses
+WHERE dt BETWEEN '2021-10-14' AND '2021-11-12'
+AND account = 'citi'
+UNION
+SELECT * FROM monthly_expenses
+WHERE dt BETWEEN '2021-11-01' AND '2021-11-12'
+AND account <> 'citi') cost_total
+UNION
+SELECT sum(income) FROM monthly_income
+WHERE dt BETWEEN '2021-11-01' AND '2021-11-16'*/
+
+
+/*SELECT * FROM monthly_income
+ORDER BY dt DESC*/
+
+/*UPDATE monthly_expenses
+SET account = 'afcc'
+WHERE dt BETWEEN '2021-11-01' AND '2021-11-16'
+AND account = 'afc'*/
