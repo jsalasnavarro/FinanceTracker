@@ -34,3 +34,4 @@ class RunQuery:
 		cursor.execute(query, income)
 
 		self.closeConnection(cursor, connection)
+		
