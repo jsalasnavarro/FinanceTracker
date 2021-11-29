@@ -17,6 +17,25 @@ CREATE TABLE finance_account_history (
     REFERENCES finance_accounts(account_id)
 );
 
+-- added a new column to finance account history then created foreign
+-- key to monthly_expenses table
+
+ALTER TABLE finance_account_history
+ADD COLUMN expense_id int;
+
+ALTER TABLE finance_account_history
+ADD CONSTRAINT con
+FOREIGN KEY (expense_id)
+REFERENCES monthly_expenses(expense_id);
+
+ALTER TABLE finance_account_history
+ADD COLUMN income_id int;
+
+ALTER TABLE finance_account_history
+ADD CONSTRAINT income
+FOREIGN KEY (income_id)
+REFERENCES monthly_income(income_id);
+
 -- creating table to track income
 CREATE TABLE monthly_income (
     income_id SERIAL PRIMARY KEY,
