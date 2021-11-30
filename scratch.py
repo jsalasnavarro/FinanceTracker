@@ -9,7 +9,7 @@ import sys
 
 # add expenses indidividually
 # vendor, cost, category, paymentType, date
-newExpense = Finance('harmons', 45.54, 'groceries', 'afcc', '2021-11-24').setExpense()
+newExpense = Finance('xfinity', 50.08, 'wifi', 'citi credit', '2021-11-29').setExpense()
 
 
 # add income individually
