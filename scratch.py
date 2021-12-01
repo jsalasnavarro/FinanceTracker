@@ -10,7 +10,7 @@ import psycopg2
 
 # add expenses indidividually
 # vendor, cost, category, paymentType, date
-newExpense = Finance('xfinity', 50.08, 'wifi', 'citi credit', '2021-11-29').setExpense()
+newExpense = Finance('university veterinary', 53.23, 'clifford', 'citi credit', '2021-11-29', 'medication').setExpense()
 
 # source, cost, category, account, details(if any), date
 # newExpense = Finance().setExpense()

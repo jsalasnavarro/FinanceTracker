@@ -17,7 +17,7 @@ class RunQuery:
 		cursor.close()
 		connection.close()
 
-	def insertExpense(self, source, cost, category, account,details, date):
+	def insertExpense(self, source, cost, category, account, details, date):
 		cursor, connection = self.createConnection()
 
 		# query category and account
@@ -112,4 +112,51 @@ class RunQuery:
 		cursor.execute(query, currentBalance)
 
 		self.closeConnection(cursor, connection)
-		
+
+	def transferUpdate(self, source, money, category, account, details, date):
+		cursor, connection = self.createConnection()
+
+		# select account id from source and receive account
+		srcIdQuery = "SELECT account_id FROM finance_accounts WHERE account = %s"
+		cursor.execute(srcIdQuery, [source,])
+		sourceId = int(cursor.fetchall()[0][0])
+
+		rcvIdQuery = "SELECT account_id FROM finance_accounts WHERE account = %s"
+		cursor.execute(rcvIdQuery, [account,])
+		receiveId = int(cursor.fetchall()[0][0])
+
+		# select amount from source account
+		sourceQuery = "SELECT balance FROM finance_accounts WHERE account = %s"
+		cursor.execute(sourceQuery, [source,])
+		# remove dollar sign from result and cast as a float
+		sourceBalance = float(cursor.fetchall()[0][0].replace('$', ''))
+
+		# select amount from receiving account
+		receiveQuery = "SELECT balance FROM finance_accounts WHERE account = %s"
+		cursor.execute(receiveQuery, [account,])
+		receiveBalance = float(cursor.fetchall()[0][0].replace('$', ''))
+
+		# update source account with difference of balance and money
+		sourceBalance -= money
+		sourceUpdate = "UPDATE finance_accounts SET balance = %s WHERE account = %s"
+		cursor.execute(sourceUpdate, [sourcBalance, source])
+
+		# update receive account with sum of balance and money
+		receiveBalance += money
+		receiveUpdate = "UPDATE finance_accounts SET balance = %s WHERE account = %s"
+		cursor.execute(receiveUpdate, [receiveBalance, account])
+
+		# insert new value into monthly transfers table
+		insertTransfer = "INSERT INTO  transfers(money, from_id, to_id, details, dt) VALUES (%s, %s, %s, %s, %s)"
+		cursor.execute(insertTransfer, [money, sourceId, receiveId, details, date])
+		transferId = int(cursor.fetchone()[0])
+
+		# update finance account history with new balance for source and receive table
+		updatedBalance = [sourceId, sourceBalance, date, transferId]
+		query = "INSERT INTO finance_account_history (account_id, balance, dt, transfer_id) VALUES (%s, %s, %s, %s)"
+		cursor.execute(query, updatedBalance)
+
+		updatedBalance = [accountId, receiveBalance, date, transferId]
+		query = "INSERT INTO finance_account_history (account_id, balance, dt, transfer_id) VALUES (%s, %s, %s, %s)"
+		cursor.execute(query, updatedBalance)
+

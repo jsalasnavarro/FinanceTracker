@@ -28,3 +28,9 @@ class Finance:
 		connect = RunQuery('monthly_income', 'finances', 'localhost')
 		connect.insertIncome(self.source, self.money, self.category, self.account, self.date)
 
+	def transferFunds(self):
+		# table, database, server
+		connect = RunQuery('monthly_income', 'finances', 'localhost')
+		# source is where money is sent to
+		# account is account money is leaving from
+		connect.transferUpdate(self.source, self.money, self.category, self.account, self.details, self.date)

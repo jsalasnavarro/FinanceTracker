@@ -36,6 +36,14 @@ ADD CONSTRAINT income
 FOREIGN KEY (income_id)
 REFERENCES monthly_income(income_id);
 
+ALTER TABLE finance_account_history
+ADD COLUMN transfer_id int;
+
+ALTER TABLE finance_account_history
+ADD CONSTRAINT transfer_id
+FOREIGN KEY (transfer_id)
+REFERENCES transfers(id);
+
 -- creating table to track income
 CREATE TABLE monthly_income (
     income_id SERIAL PRIMARY KEY,
@@ -60,7 +68,7 @@ CREATE TABLE monthly_expenses (
     expense_id BIGSERIAL PRIMARY KEY,
     income_id INT,
     vendor VARCHAR(30) NOT NULL,
-    cost money NOT NULL,
+    cost MONEY NOT NULL,
     category_id INT,
     account_id INT,
     dt DATE,
@@ -70,5 +78,18 @@ CREATE TABLE monthly_expenses (
     FOREIGN KEY (category_id)
     REFERENCES expense_categories(category_id),
     FOREIGN KEY (account_id)
+    REFERENCES finance_accounts(account_id)
+);
+
+CREATE TABLE transfers (
+    id SERIAL PRIMARY KEY,
+    amount MONEY NOT NULL,
+    from_id INT,
+    to_id INT,
+    details VARCHAR(50),
+    dt DATE,
+    FOREIGN KEY (from_id)
+    REFERENCES finance_accounts(account_id),
+    FOREIGN KEY (to_id)
     REFERENCES finance_accounts(account_id)
 );
