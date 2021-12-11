@@ -57,19 +57,54 @@ class RunQuery:
 		# query account balance
 		query = "SELECT balance FROM finance_accounts WHERE account_id = %s"
 		cursor.execute(query, [accountId,])
-		# remove dollar sign from result and cast as a float
-		balance = float(cursor.fetchall()[0][0].replace('$', ''))
+
+		# get balance as a string and remove '$'
+		balance = cursor.fetchall()[0][0].replace('$','')
+		try:
+			balance = float(balance)
+		# else change to a foat
+		except:	
+			balance = float(balance.replace(',',''))
+
+		# update credit loan balances
+		if category == 'mines loan' or category == 'america first car loan':
+			# dict for each account name and id
+			loanAccounts = {'mines loan': 13, 'america first car loan': 12}
+			loanId = loanAccounts[category]
+
+			# query balance of loan
+			loanQuery = "SELECT balance FROM finance_accounts WHERE account_id = %s"
+			cursor.execute(loanQuery, [loandId,])
+			loanBalance = cursor.fetchall()[0][0]
+
+			# calculate remaining balance after cost applied
+			if loanId == 13:
+				# interest paid
+				interest = balance * (12/0.45)
+				# principle paid
+				principle = cost - interest
+				newBalance = loanBalance - principle
+
+			elif loanId == 12:
+				newBalance = loanBalance - cost
+
+			# update account
+			loanQuery = "UPDATE finance_accounts SET balance = %s WHERE account_id = %s"
+			cursor.execute(loanQuery, [newBalance, loanId])
+
+			# update account history
+			query = "INSERT INTO finance_account_history (account_id, balance, dt, expense_id) VALUES (%s, %s, %s, %s)"
+			cursor.execute(query, [loandId, newBalance, date, expenseId])
+
 
 		# subtract cost from balance and insert into finance history table
 		newBalance = balance - cost
-		updatedBalance = [accountId, newBalance, date, expenseId]
 		query = "INSERT INTO finance_account_history (account_id, balance, dt, expense_id) VALUES (%s, %s, %s, %s)"
-		cursor.execute(query, updatedBalance)
+		cursor.execute(query, [accountId, newBalance, date, expenseId])
 
 		# update account balance
-		currentBalance = [newBalance, accountId]
 		query = "UPDATE finance_accounts SET balance = %s WHERE account_id = %s"
-		cursor.execute(query, currentBalance)
+		cursor.execute(query, [newBalance, accountId])
 
 		self.closeConnection(cursor, connection)
 
@@ -139,7 +174,7 @@ class RunQuery:
 		# update source account with difference of balance and money
 		sourceBalance -= money
 		sourceUpdate = "UPDATE finance_accounts SET balance = %s WHERE account = %s"
-		cursor.execute(sourceUpdate, [sourcBalance, source])
+		cursor.execute(sourceUpdate, [sourceBalance, source])
 
 		# update receive account with sum of balance and money
 		receiveBalance += money
@@ -147,7 +182,7 @@ class RunQuery:
 		cursor.execute(receiveUpdate, [receiveBalance, account])
 
 		# insert new value into monthly transfers table
-		insertTransfer = "INSERT INTO  transfers(money, from_id, to_id, details, dt) VALUES (%s, %s, %s, %s, %s)"
+		insertTransfer = "INSERT INTO  transfers(amount, from_id, to_id, details, dt) VALUES (%s, %s, %s, %s, %s) RETURNING id"
 		cursor.execute(insertTransfer, [money, sourceId, receiveId, details, date])
 		transferId = int(cursor.fetchone()[0])
 
@@ -156,7 +191,8 @@ class RunQuery:
 		query = "INSERT INTO finance_account_history (account_id, balance, dt, transfer_id) VALUES (%s, %s, %s, %s)"
 		cursor.execute(query, updatedBalance)
 
-		updatedBalance = [accountId, receiveBalance, date, transferId]
+		updatedBalance = [receiveId, receiveBalance, date, transferId]
 		query = "INSERT INTO finance_account_history (account_id, balance, dt, transfer_id) VALUES (%s, %s, %s, %s)"
 		cursor.execute(query, updatedBalance)
 
+		self.closeConnection(cursor, connection)

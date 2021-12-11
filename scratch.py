@@ -10,15 +10,18 @@ import psycopg2
 
 # add expenses indidividually
 # vendor, cost, category, paymentType, date
-newExpense = Finance('university veterinary', 53.23, 'clifford', 'citi credit', '2021-11-29', 'medication').setExpense()
-
-# source, cost, category, account, details(if any), date
 # newExpense = Finance().setExpense()
 
+# source, cost, category, account, details(if any), date
+newExpense = Finance('chifila', 19.9, 'fun money', 'america first credit', '2021-12-05').setExpense()
 
+# 
 # add income individually
 # source, money, category, account, date
 # newIncome = Finance().setIncome()
+
+# transfer funds
+# newTransfer = Finance().transferFunds()
 
 
 # connection = psycopg2.connect(dbname='finances', host='localhost')
