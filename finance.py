@@ -3,34 +3,31 @@ from runquery import RunQuery
 
 class Finance:
 	"""a class for organizing all expenses of financial records"""
-	# source, money, category, account, date
-	def __init__(self, source, money, category, account, date, details = ""):
-		"""Initialize expense attributes"""
-		# source of income or expense
-		self.source = source
-		self.money = money
-		self.category = category
-		self.account = account
-		self.details = details
-		self.date = date
+	def __init__(self):
+		self.db = "finances"
+		self.host = "localhost"
 			
 	def getMonthExpenses():
 		"""show expenses for the current month"""
 		print("in the works")
 
-	def setExpense(self):
+	def setExpense(self, source, money, category, account, date=datetime.now().strftime('%Y-%m-%d'), details = ""):
 		# table, database, server
-		connect = RunQuery('monthly_expenses', 'finances', 'localhost')
-		connect.insertExpense(self.source, self.money, self.category, self.account, self.details, self.date)
+		connect = RunQuery(self.db, self.host)
+		connect.insertExpense(source, money, category, account, details, date)
 
-	def setIncome(self):
+	def setIncome(self, source, money, category, account, date=datetime.now().strftime('%Y-%m-%d')):
 		# table, database, server
-		connect = RunQuery('monthly_income', 'finances', 'localhost')
-		connect.insertIncome(self.source, self.money, self.category, self.account, self.date)
+		connect = RunQuery(self.db, self.host)
+		connect.insertIncome(source, money, category, account, date)
 
-	def transferFunds(self):
+	def transferFunds(self, source, money, account, date=datetime.now().strftime('%Y-%m-%d'), details = ""):
 		# table, database, server
-		connect = RunQuery('monthly_income', 'finances', 'localhost')
+		connect = RunQuery(self.db, self.host)
 		# source is where money is sent to
 		# account is account money is leaving from
-		connect.transferUpdate(self.source, self.money, self.category, self.account, self.details, self.date)
+		connect.transferUpdate(source, money, account, details, date)
+
+	def deleteValue(self, id):
+		connect = RunQuery(self.db, self.host)
+		connect.deleteExpense(id)
