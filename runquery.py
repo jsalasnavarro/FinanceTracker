@@ -12,9 +12,7 @@ class RunQuery:
 		self.ec = "expense_categories"
 		self.transfers = "transfers"
 
-
 	def createConnection(self):
-		# connect to db 'name'
 		connection = psycopg2.connect(dbname = self.database, host = self.host)
 		cursor = connection.cursor()
 		return cursor, connection
@@ -54,11 +52,13 @@ class RunQuery:
 		cursor.execute(deleteQuery, params)
 
 	def convertDollars(self, amount):
-		amount = amount.replace('$', '')
-		try:
+		amount = amount.replace("$", "")
+		if amount.find(",") == -1:
+			# ',' not found
 			amount = float(amount)
-		except:	
-			amount = float(amount.replace(',',''))
+		else:
+			# ',' found
+			amount = float(amount.replace(",",""))
 		return amount
 
 	def updateLoanBalance(self, cursor, cost, balance, accountId, expenseId, date):
@@ -114,7 +114,7 @@ class RunQuery:
 		balance = self.convertDollars(self.selectQuery(cursor, self.fa, "account_id", [accountId,], "balance"))
 
 		# update loan balances
-		if category == 'mines loan' or category == 'america first car loan':
+		if category == "mines loan" or category == "america first car loan":
 			self.updateLoanBalance(cursor, cost, balance, accountId, expenseId, date)
 
 		# subtract cost from balance and insert into finance history table
@@ -154,32 +154,35 @@ class RunQuery:
 	def transferUpdate(self, source, money, account, details, date):
 		cursor, connection = self.createConnection()
 
-		# select account id from source and receive account
-		sourceId = self.selectQuery(cursor, self.fa, "account", [source,], "account_id")
-		receiveId = self.selectQuery(cursor, self.fa, "account", [account,], "account_id")
+		# cursor, table, search, arguments, columns = "*"
+		# f"SELECT {columns} FROM {table} WHERE {search} = %s"
+		
+		# select account id from receive and remove account
+		receiveId = self.selectQuery(cursor, self.fa, "account", [source,], "account_id")
+		removeId = self.selectQuery(cursor, self.fa, "account", [account,], "account_id")
 
 		# select amount from source account
-		sourceBalance = self.convertDollars(self.selectQuery(cursor, self.fa, "account", [source,], "balance"))
+		receiveBalance = self.convertDollars(self.selectQuery(cursor, self.fa, "account", [source,], "balance"))
 
-		# select amount from receiving account
-		receiveBalance = self.convertDollars(self.selectQuery(cursor, self.fa, "account", [account,], "balance"))
+		# select amount from account money is being removed from
+		removeBalance = self.convertDollars(self.selectQuery(cursor, self.fa, "account", [account,], "balance"))
 
 		# update source account with difference of balance and money
-		sourceBalance -= money
-		self.updateQuery(cursor, self.fa, "balance", "account", [sourceBalance, source])
-
-		# update receive account with sum of balance and money
 		receiveBalance += money
-		self.updateQuery(cursor, self.fa, "balance", "account", [receiveBalance, account])
+		self.updateQuery(cursor, self.fa, "balance", "account", [receiveBalance, source])
+
+		# update remove account
+		removeBalance -= money
+		self.updateQuery(cursor, self.fa, "balance", "account", [removeBalance, account])
 
 		# insert new value into transfers table
 		transferColumns = "(amount, from_id, to_id, details, dt)"
-		transferValues = [money, sourceId, receiveId, details, date]
+		transferValues = [money, removeId, receiveId, details, date]
 		transferId = self.insertQuery(cursor, self.transfers, transferColumns, transferValues, "RETURNING id")
 
 		# update balance in account w/ removed balance
 		historyColumns = "(account_id, balance, dt, transfer_id)"
-		historyValues = [sourceId, sourceBalance, date, transferId]
+		historyValues = [removeId, removeBalance, date, transferId]
 		self.insertQuery(cursor, self.fah, historyColumns, historyValues)
 
 		# update balance in account that received money

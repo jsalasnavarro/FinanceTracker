@@ -1,0 +1,17 @@
+select me.expense_id, fa.account, ah.balance, me.cost, me.vendor, ec.expense_category, me.details, me.dt
+from monthly_expenses me
+join expense_categories ec on ec.category_id = me.category_id
+join finance_account_history ah on ah.expense_id = me.expense_id
+join finance_accounts fa on fa.account_id = me.account_id
+group by fa.account
+order by me.expense_id desc
+
+select * from finance_account_history
+
+select * from finance_accounts
+order by account_id asc
+
+select * from monthly_income
+
+select cost from monthly_expenses
+where expense_id = 613
