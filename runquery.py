@@ -22,9 +22,9 @@ class RunQuery:
 		cursor.close()
 		connection.close()
 
-	def selectQuery(self, cursor, table, search, arguments, columns = "*"):
+	def selectQuery(self, cursor, table, search, params, columns = "*"):
 		queryString = f"SELECT {columns} FROM {table} WHERE {search} = %s"
-		cursor.execute(queryString, arguments)
+		cursor.execute(queryString, params)
 
 		if columns == "*":
 			results = cursor.fetchall()
@@ -36,7 +36,7 @@ class RunQuery:
 	def insertQuery(self, cursor, table, columns, values, returnValue=""):
 		# make a tuple of %s placeholders that is same size as values list
 		placeArgs = str(tuple(["%s"]*len(values))).replace("'","")
-		insertQuery = f"INSERT INTO {table}{columns} VALUES {placeArgs} {returnValue}"
+		insertQuery = f"INSERT INTO {table}({columns}) VALUES{placeArgs} {returnValue}"
 		cursor.execute(insertQuery, values)
 
 		# only return results if returnValue is passed into function
@@ -44,7 +44,7 @@ class RunQuery:
 			return cursor.fetchone()[0]
 
 	def updateQuery(self, cursor, table, setArg, whereArg, params):
-		loanQuery = f"UPDATE {table} SET {setArg} = %s WHERE {whereArg} = %s"
+		loanQuery = f"UPDATE {table} SET {setArg} = %s, dt = %s WHERE {whereArg} = %s"
 		cursor.execute(loanQuery, params)
 
 	def deleteQuery(self, cursor, table, search, params):
@@ -61,7 +61,7 @@ class RunQuery:
 			amount = float(amount.replace(",",""))
 		return amount
 
-	def updateLoanBalance(self, cursor, cost, balance, accountId, expenseId, date):
+	def updateLoanBalance(self, cursor, category, cost, balance, accountId, expenseId, date):
 		# dict for each account name and id
 		loanAccounts = {'mines loan': 13, 'america first car loan': 12}
 		loanId = loanAccounts[category]
@@ -71,20 +71,22 @@ class RunQuery:
 
 		# calculate remaining balance after cost applied
 		if loanId == 13:
-			# interest paid
-			interest = balance * (12/0.045)
-			# principal paid
-			principal = cost - interest
-			newBalance = loanBalance - principal
+			interest = 0.045
 
 		elif loanId == 12:
-			newBalance = loanBalance - cost
+			interest = 0.0274
+
+		# interest paid, convert balance to positive for calcs
+		interest = -1*loanBalance * (interest/12)
+		# principal paid
+		principal = cost - interest
+		newBalance = loanBalance + principal
 
 		# update credit account with new balance
-		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, loanId])
+		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, date, loanId])
 		# update account history with a record of new balance
-		historyValues = [loandId, newBalance, date, expenseId]
-		historyColumns = "(account_id, balance, dt, expense_id)"
+		historyValues = [loanId, newBalance, date, expenseId]
+		historyColumns = "account_id, balance, dt, expense_id"
 		self.insertQuery(cursor, self.fah, historyColumns, historyValues)
 
 	def insertExpense(self, source, cost, category, account, details, date):
@@ -96,18 +98,18 @@ class RunQuery:
 
 		# if category or account don't exist insert into tables, else get existing ids
 		if len(categoryResults) == 0:
-			categoryId = self.insertQuery(cursor, "(expense_categories)", "expense_category", [category,], "RETURNING category_id")
+			categoryId = self.insertQuery(cursor, "expense_categories", "expense_category", [category,], "RETURNING category_id")
 		else:
 			categoryId = self.selectQuery(cursor, self.ec, "expense_category", [category,], "category_id")
 
 		if len(accountResults) == 0:
-			accountId = self.insertQuery(cursor, self.fa, "(account)", [account,], "RETURNING account_id")
+			accountId = self.insertQuery(cursor, self.fa, "account", [account,], "RETURNING account_id")
 		else:
-			accountId = self.selectQuery(cursor, self.fa, "(account)", [account,], "account_id")
+			accountId = self.selectQuery(cursor, self.fa, "account", [account,], "account_id")
 
 		# insert expense into the table
 		expenseValues = [source, cost, categoryId, accountId, details, date]
-		expenseColumns = "(vendor, cost, category_id, account_id, details, dt)"
+		expenseColumns = "vendor, cost, category_id, account_id, details, dt"
 		expenseId = self.insertQuery(cursor, self.me, expenseColumns, expenseValues, "RETURNING expense_id")
 
 		# query account balance
@@ -115,14 +117,14 @@ class RunQuery:
 
 		# update loan balances
 		if category == "mines loan" or category == "america first car loan":
-			self.updateLoanBalance(cursor, cost, balance, accountId, expenseId, date)
+			self.updateLoanBalance(cursor, category, cost, balance, accountId, expenseId, date)
 
 		# subtract cost from balance and insert into finance history table
 		newBalance = balance - cost
-		historyColumns = "(account_id, balance, dt, expense_id)"
+		historyColumns = "account_id, balance, dt, expense_id"
 		historyValues = [accountId, newBalance, date, expenseId]
 		self.insertQuery(cursor, self.fah, historyColumns, historyValues)
-		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, accountId])
+		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, date, accountId])
 
 		self.closeConnection(cursor, connection)
 
@@ -131,12 +133,12 @@ class RunQuery:
 		accountResults = self.selectQuery(cursor, self.fa, "account", [account,])
 
 		if accountResults == 0:
-			accountId = self.insertQuery(cursor, self.fa, "(account)", [account,], "RETURNING account_id")
+			accountId = self.insertQuery(cursor, self.fa, "account", [account,], "RETURNING account_id")
 		else:
 			accountId = self.selectQuery(cursor, self.fa, "account", [account,], "account_id")
 
 		incomeAdd = [source, income, category, accountId, date]
-		incomeColumns = "(source, income, income_category, account_id, dt)"
+		incomeColumns = "source, income, income_category, account_id, dt"
 		incomeId = self.insertQuery(cursor, self.mi, incomeColumns, incomeAdd, "RETURNING income_id")
 
 		# query account balance to be updated
@@ -144,10 +146,10 @@ class RunQuery:
 
 		# subtract cost from balance and insert into finance history table
 		newBalance = balance + income
-		historyColumns = "(account_id, balance, dt, income_id)"
+		historyColumns = "account_id, balance, dt, income_id"
 		historyValues = [accountId, newBalance, date, incomeId]
 		self.insertQuery(cursor, self.fah, historyColumns, historyValues)
-		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, accountId])
+		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, date, accountId])
 
 		self.closeConnection(cursor, connection)
 
@@ -169,19 +171,19 @@ class RunQuery:
 
 		# update source account with difference of balance and money
 		receiveBalance += money
-		self.updateQuery(cursor, self.fa, "balance", "account", [receiveBalance, source])
+		self.updateQuery(cursor, self.fa, "balance", "account", [receiveBalance, date, source])
 
 		# update remove account
 		removeBalance -= money
-		self.updateQuery(cursor, self.fa, "balance", "account", [removeBalance, account])
+		self.updateQuery(cursor, self.fa, "balance", "account", [removeBalance, date, account])
 
 		# insert new value into transfers table
-		transferColumns = "(amount, from_id, to_id, details, dt)"
+		transferColumns = "amount, from_id, to_id, details, dt"
 		transferValues = [money, removeId, receiveId, details, date]
 		transferId = self.insertQuery(cursor, self.transfers, transferColumns, transferValues, "RETURNING id")
 
 		# update balance in account w/ removed balance
-		historyColumns = "(account_id, balance, dt, transfer_id)"
+		historyColumns = "account_id, balance, dt, transfer_id"
 		historyValues = [removeId, removeBalance, date, transferId]
 		self.insertQuery(cursor, self.fah, historyColumns, historyValues)
 
@@ -191,17 +193,17 @@ class RunQuery:
 
 		self.closeConnection(cursor, connection)
 
-	def deleteExpense(self, id):
+	def deleteExpense(self, date, id):
 		cursor, connection = self.createConnection()
 
 		# select account id and type
-		accountId = self.selectQuery(cursor, self.me, "expense_id", id, "account_id")
-		accountType = self.selectQuery(cursor, self.fa, "account_id", accountId, "account_type")
+		accountId = self.selectQuery(cursor, self.me, "expense_id", [id,], "account_id")
+		accountType = self.selectQuery(cursor, self.fa, "account_id", [accountId,], "account_type")
 
 		# select cost of amount to be deleted from table
-		cost = self.convertDollars(self.selectQuery(cursor, self.me, "expense_id", id, "cost"))
+		cost = self.convertDollars(self.selectQuery(cursor, self.me, "expense_id", [id,], "cost"))
 		# select balance to update
-		balance = self.convertDollars(self.selectQuery(cursor, self.fa, "account_id", accountId, "balance"))
+		balance = self.convertDollars(self.selectQuery(cursor, self.fa, "account_id", [accountId,], "balance"))
 
 		# depending on account type subtract or add from balance
 		if accountType == "credit":
@@ -210,7 +212,7 @@ class RunQuery:
 			balance -= cost
 
 		# update balance in account table
-		self.updateQuery(cursor, self.fa, "balance", "account_id", [balance, accountId])
+		self.updateQuery(cursor, self.fa, "balance", "account_id", [balance, date, accountId])
 
 		# delete from expense and account history tables
 		self.deleteQuery(cursor, self.fah, "expense_id", [id,])

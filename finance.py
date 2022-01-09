@@ -30,4 +30,4 @@ class Finance:
 
 	def deleteValue(self, id):
 		connect = RunQuery(self.db, self.host)
-		connect.deleteExpense(id)
+		connect.deleteExpense(datetime.now().strftime('%Y-%m-%d'), id)

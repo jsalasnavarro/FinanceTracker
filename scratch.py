@@ -25,7 +25,7 @@ finance = Finance()
 # source, money, account, date, details = ""
 # newTransfer = finance.transferFunds()
 	
-# delete an expense
+# delete an expense using expense id
 # finance.deleteValue()
 
 # dataQuery = "select fa.account, ah.balance, me.cost, me.vendor, ec.expense_category, me.details, me.dt \n\
