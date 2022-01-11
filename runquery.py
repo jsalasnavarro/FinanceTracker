@@ -62,30 +62,24 @@ class RunQuery:
 		return amount
 
 	def updateLoanBalance(self, cursor, category, cost, balance, accountId, expenseId, date):
-		# dict for each account name and id
-		loanAccounts = {'mines loan': 13, 'america first car loan': 12}
-		loanId = loanAccounts[category]
-
-		# query balance of loan
-		loanBalance = self.convertDollars(self.selectQuery(cursor, self.fa, "account_id", [loanId,], "balance"))
-
-		# calculate remaining balance after cost applied
-		if loanId == 13:
+		# select interest amount for corresponding account
+		# mines loan
+		if accountId == 13:
 			interest = 0.045
-
-		elif loanId == 12:
+		# car loan
+		elif accountId == 12:
 			interest = 0.0274
 
 		# interest paid, convert balance to positive for calcs
-		interest = -1*loanBalance * (interest/12)
-		# principal paid
-		principal = cost - interest
-		newBalance = loanBalance + principal
+		interestPaid = -1*balance * (interest/12)
+		# principal paid towards balance, my cost minus interest
+		principal = cost - interestPaid
+		newBalance = balance + principal
 
 		# update credit account with new balance
-		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, date, loanId])
+		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, date, accountId])
 		# update account history with a record of new balance
-		historyValues = [loanId, newBalance, date, expenseId]
+		historyValues = [accountId, newBalance, date, expenseId]
 		historyColumns = "account_id, balance, dt, expense_id"
 		self.insertQuery(cursor, self.fah, historyColumns, historyValues)
 
@@ -112,7 +106,7 @@ class RunQuery:
 		expenseColumns = "vendor, cost, category_id, account_id, details, dt"
 		expenseId = self.insertQuery(cursor, self.me, expenseColumns, expenseValues, "RETURNING expense_id")
 
-		# query account balance
+		# query account balances
 		balance = self.convertDollars(self.selectQuery(cursor, self.fa, "account_id", [accountId,], "balance"))
 
 		# update loan balances
@@ -155,9 +149,6 @@ class RunQuery:
 
 	def transferUpdate(self, source, money, account, details, date):
 		cursor, connection = self.createConnection()
-
-		# cursor, table, search, arguments, columns = "*"
-		# f"SELECT {columns} FROM {table} WHERE {search} = %s"
 		
 		# select account id from receive and remove account
 		receiveId = self.selectQuery(cursor, self.fa, "account", [source,], "account_id")
@@ -219,3 +210,4 @@ class RunQuery:
 		self.deleteQuery(cursor, self.me, "expense_id", [id,])
 
 		self.closeConnection(cursor, connection)
+		
