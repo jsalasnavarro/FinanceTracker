@@ -37,3 +37,5 @@ finance = Finance()
 
 # engine = create_engine("postgresql+psycopg2://@localhost/finances")
 # data = pd.read_sql_query(dataQuery, engine)
+
+# print(data)

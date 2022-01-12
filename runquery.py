@@ -61,25 +61,31 @@ class RunQuery:
 			amount = float(amount.replace(",",""))
 		return amount
 
-	def updateLoanBalance(self, cursor, category, cost, balance, accountId, expenseId, date):
+	def updateLoanBalance(self, cursor, category, cost, accountId, expenseId, date):
 		# select interest amount for corresponding account
-		# mines loan
-		if accountId == 13:
+		loanAccounts = {"mines loan": 13, "america first car loan": 12}
+		loanId = loanAccounts[category]
+
+		balance = self.convertDollars(self.selectQuery(cursor, self.fa, "account_id", [loanId,], "balance"))
+
+		if loanId == 13:
 			interest = 0.045
-		# car loan
-		elif accountId == 12:
+		else:
 			interest = 0.0274
 
 		# interest paid, convert balance to positive for calcs
 		interestPaid = -1*balance * (interest/12)
+		print(f"interest paid {interestPaid}")
 		# principal paid towards balance, my cost minus interest
 		principal = cost - interestPaid
+		print(f"principal {principal}")
 		newBalance = balance + principal
+		print(f"updated loan balance {newBalance}")
 
 		# update credit account with new balance
-		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, date, accountId])
+		self.updateQuery(cursor, self.fa, "balance", "account_id", [newBalance, date, loanId])
 		# update account history with a record of new balance
-		historyValues = [accountId, newBalance, date, expenseId]
+		historyValues = [loanId, newBalance, date, expenseId]
 		historyColumns = "account_id, balance, dt, expense_id"
 		self.insertQuery(cursor, self.fah, historyColumns, historyValues)
 
@@ -111,7 +117,7 @@ class RunQuery:
 
 		# update loan balances
 		if category == "mines loan" or category == "america first car loan":
-			self.updateLoanBalance(cursor, category, cost, balance, accountId, expenseId, date)
+			self.updateLoanBalance(cursor, category, cost, accountId, expenseId, date)
 
 		# subtract cost from balance and insert into finance history table
 		newBalance = balance - cost
